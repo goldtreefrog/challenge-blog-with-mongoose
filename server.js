@@ -34,6 +34,23 @@ app.get("/blogs", (req, res) => {
     });
 });
 
+// GET request by single ID
+app.get("/blogs/:id", (req, res) => {
+  Blog
+    // this is a convenience method Mongoose provides for searching
+    // by the object _id property
+    .findById(req.params.id)
+    .then(blog => res.json(blog.serialize()))
+    .catch(err => {
+      console.error(err);
+      // res.status(500).json({ message: "Internal server error" });
+      if (err.name === "CastError") {
+        res.status(410).json({ message: `Id (${req.params.id}) not found` });
+      }
+      res.status(404).json({ message: "Internal server error: " + err });
+    });
+});
+
 // Create a new blog record.
 // Note: For author, I allow firstName to be missing but require lastName. (Some authors only have one name.)
 app.post("/blogs", (req, res) => {
@@ -97,6 +114,13 @@ app.put("/blogs/:id", (req, res) => {
       // .end();  //Blog.findById(req.params.id).serialize
     })
     .catch(err => res.status(500).json("Internal server error probably prevented update, but you had better check the data."));
+});
+
+app.delete("/blogs/:id", (req, res) => {
+  Blog.findByIdAndRemove(req.params.id)
+    .then(blog => res.status(200).json({ message: `Record (id:${req.params.id}) successfully deleted` }))
+    // .then(blog => res.status(204).end())
+    .catch(err => res.status(500).json({ message: "Internal server error" }));
 });
 
 // catch-all endpoint if client makes request to non-existent endpoint
